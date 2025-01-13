@@ -1,0 +1,57 @@
+[project]
+name = "s3-sync"
+dynamic = ["version"]
+requires-python = ">=3.11"
+authors = [{ name = "James Harmison", email = "jharmison@redhat.com" }]
+description = """\
+An tool to sync from one S3 bucket to another efficiently\
+"""
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "dynaconf >=3.2.6,<3.3.0",
+    "pydantic >=2.10.5,<2.11.0",
+    "typer >=0.15.1,<0.16",
+    "boto3 >= 1.35.97,<1.36",
+]
+
+[project.optional-dependencies]
+dev = ["tox", "pytest"]
+
+[project.urls]
+Source = "https://github.com/jharmison-redhat/s3-sync"
+Documentation = "https://github.com/jharmison-redhat/s3-sync"
+
+[project.scripts]
+s3-sync = "s3_sync.cli:cli"
+
+[tool.setuptools.package-data]
+s3_sync = ["defaults.toml"]
+
+[tool.setuptools_scm]
+write_to = "src/s3_sync/__version__.py"
+
+[build-system]
+requires = ["setuptools", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+skip-string-normalization = false
+line-length = 120
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+force_single_line = true
+line_length = 120
+src_paths = ["src", "tests"]
+
+[tool.pytest.ini_options]
+log_cli = true
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

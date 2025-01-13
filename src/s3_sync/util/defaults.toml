@@ -1,0 +1,11 @@
+[src]
+endpoint = "https://s3.amazonaws.com"
+access_key = ""
+secret_key = ""
+validate_tls = true
+
+[dest]
+endpoint = "https://s3.amazonaws.com"
+access_key = ""
+secret_key = ""
+validate_tls = true
