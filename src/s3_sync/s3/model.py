@@ -1,8 +1,19 @@
 import re
+from enum import Enum
+from functools import cached_property
+from typing import TYPE_CHECKING
+from typing import List
 from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import ValidationError
+
+if TYPE_CHECKING:
+    from types_boto3_s3.client import S3Client
+else:
+    S3Client = object
+
 
 _s3_pattern: re.Pattern = re.compile(
     r"^s3a?://"
@@ -58,11 +69,11 @@ class S3Path(BaseModel):
         return self.url.split("://", 1)[0]
 
     @property
-    def bucket(self) -> Optional[str]:
+    def bucket(self) -> str:
         """Extract the bucket name from the URL."""
         match = _bucket_and_key_pattern.match(self.url)
         if match is None:
-            return None
+            raise ValidationError(f"Unable to parse bucket from {self.url}")
         return match.group("bucket")
 
     @property
@@ -71,13 +82,13 @@ class S3Path(BaseModel):
         return self.url.endswith("/")
 
     @property
-    def key(self) -> Optional[str]:
+    def key(self) -> str:
         """Extract the key from the URL, if present."""
         match = _bucket_and_key_pattern.match(self.url)
         if match is None:
-            return None
+            raise ValidationError(f"Unable to parse key from {self.url}")
         key = match.group("key")
-        return key if key else None
+        return key
 
     @property
     def parent(self) -> Optional["S3Path"]:
@@ -93,3 +104,65 @@ class S3Path(BaseModel):
             else:
                 return S3Path(url=f"{self.scheme}://{self.bucket}/{key_parts[0]}/")
         return None
+
+
+class S3File(BaseModel):
+    """Pydantic Model to represent a specific file, represented by a key, at an S3 endpoint."""
+
+    path: S3Path
+    size: int
+
+
+class S3FileSyncType(str, Enum):
+    SINGLE = "single"
+    MULTIPART = "multi-part"
+
+
+class S3FileSyncPlan(BaseModel):
+    """Pydantic Model for representing synchronizing a single file in S3."""
+
+    src: S3File
+    dest: S3Path
+    type: S3FileSyncType
+
+
+class S3Sync(BaseModel):
+    """Pydantic Model for representing S3 synchronization."""
+
+    src: S3Path
+    dest: S3Path
+    src_client: S3Client
+    dest_client: S3Client
+    chunk_size: int = 15_728_640
+
+    @cached_property
+    def src_objects(self) -> List[S3File]:
+        ret = []
+        for entry in self.src_client.list_objects(Bucket=self.src.bucket, Prefix=self.src.key).get("Contents", []):
+            key = entry.get("Key", None)
+            if key is not None:
+                path = S3Path(url=f"{self.src.scheme}://{self.src.bucket}/{key}")
+                size = self.src_client.head_object(Bucket=self.src.bucket, Key=key).get("ContentLength", 0)
+                ret.append(S3File(path=path, size=size))
+        return ret
+
+    @cached_property
+    def plans(self) -> List[S3FileSyncPlan]:
+        ret = []
+        for src_file in self.src_objects:
+            trimmed_key = src_file.path.key.replace(self.src.key, "")
+            dest_path = S3Path(url=f"{self.dest.url}{trimmed_key}")
+            if src_file.size < self.chunk_size:
+                sync_type = S3FileSyncType.SINGLE
+            else:
+                sync_type = S3FileSyncType.MULTIPART
+
+            ret.append(S3FileSyncPlan(src=src_file, dest=dest_path, type=sync_type))
+        return ret
+
+    def _single_file_sync(self, src: S3Path, dest: S3Path):
+        request = self.src_client.get_object(Bucket=src.bucket, Key=src.key)
+        body = request.get("Body", None)
+        if body is None:
+            raise RuntimeError(f"Error retrieving {src} from {self.src_client.meta.endpoint_url}")
+        self.dest_client.put_object(Bucket=dest.bucket, Key=dest.key)

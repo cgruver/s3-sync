@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["tox", "pytest"]
+dev = ["tox", "pytest", "types-boto3[boto3,s3]"]
 
 [project.urls]
 Source = "https://github.com/jharmison-redhat/s3-sync"

@@ -1,13 +1,12 @@
 import os
 
 import boto3
-from boto3.s3.transfer import TransferConfig
-from boto3.s3.transfer import TransferManager
 from pydantic import AnyHttpUrl
 
 from ..util import logger
 from ..util import settings
 from .model import S3Path
+from .model import S3Sync
 
 
 def sync(
@@ -17,9 +16,10 @@ def sync(
     dest_endpoint: AnyHttpUrl = AnyHttpUrl(settings.dest.endpoint),
     src_validate: bool = settings.src.validate_tls,
     dest_validate: bool = settings.dest.validate_tls,
-    max_threads_per_conn: int = 5,
+    max_threads_per_file: int = 5,
+    max_files: int = 1,
+    chunk_size: int = 15_728_640,
 ) -> None:
-    config = TransferConfig(max_concurrency=max_threads_per_conn)
     src_access_key = settings.src.access_key
     src_secret_key = settings.src.secret_key
     if src_access_key is None:
@@ -46,4 +46,12 @@ def sync(
         aws_access_key_id=dest_access_key,
         aws_secret_access_key=dest_secret_key,
     )
-    logger.debug(f"{src_client} -> {dest_client}")
+    sync = S3Sync(
+        src=src,
+        dest=dest,
+        src_client=src_client,
+        dest_client=dest_client,
+        chunk_size=chunk_size,
+    )
+    logger.debug(sync.model_dump())
+    logger.debug(sync.plans)

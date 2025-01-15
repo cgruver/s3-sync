@@ -1,5 +1,6 @@
 import typer
 from pydantic import AnyHttpUrl
+from pydantic import ByteSize
 from pydantic import ValidationError
 from rich import print
 from typing_extensions import Annotated
@@ -76,12 +77,22 @@ def sync(
             help="Whether to validate the TLS certificates of the destination endpoint, if applicable",
         ),
     ] = settings.dest.validate_tls,
-    max_threads_per_conn: Annotated[
+    max_threads_per_file: Annotated[
         int,
         typer.Option(
-            help="The maximum threads per S3 object connection, to adjust bandwidth in multipart operations",
+            help="The maximum threads per S3 object sync, to adjust bandwidth in multipart operations",
         ),
     ] = 5,
+    max_files: Annotated[
+        int,
+        typer.Option(
+            help="The maximum number of files to transfer at a time",
+        ),
+    ] = 1,
+    chunk_size: Annotated[
+        str,
+        typer.Option(help="The size of each chunk"),
+    ] = "15MiB",
     _: Annotated[
         bool,
         typer.Option(
@@ -120,6 +131,12 @@ def sync(
         )
         raise typer.Exit(1)
 
+    try:
+        chunk_size_int = ByteSize._validate(chunk_size, None)  # type: ignore
+    except ValidationError:
+        print(f"Invalid chunk size: {chunk_size}. Please specify in bytes, KB, MiB, or similar.")
+        raise typer.Exit(1)
+
     logger.debug(f"{src_endpoint}{src_path.bucket}/{src_path.key} -> {dest_endpoint}{dest_path.bucket}/{dest_path.key}")
     s3_sync(
         src=src_path,
@@ -128,5 +145,7 @@ def sync(
         dest_endpoint=dest_endpoint,
         src_validate=src_validate,
         dest_validate=dest_validate,
-        max_threads_per_conn=max_threads_per_conn,
+        max_threads_per_file=max_threads_per_file,
+        max_files=max_files,
+        chunk_size=chunk_size_int,
     )
