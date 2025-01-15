@@ -2,10 +2,12 @@
 endpoint = "https://s3.amazonaws.com"
 access_key = ""
 secret_key = ""
+region = "us-east-1"
 validate_tls = true
 
 [dest]
 endpoint = "https://s3.amazonaws.com"
 access_key = ""
 secret_key = ""
+region = "us-east-1"
 validate_tls = true

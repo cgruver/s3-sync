@@ -1,13 +1,19 @@
+import concurrent.futures
 import re
-from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING
+from typing import Iterator
 from typing import List
 from typing import Optional
 
+from boto3.s3.transfer import TransferConfig
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import ValidationError
+from pydantic import conint
+
+from ..util import logger
 
 if TYPE_CHECKING:
     from types_boto3_s3.client import S3Client
@@ -113,27 +119,24 @@ class S3File(BaseModel):
     size: int
 
 
-class S3FileSyncType(str, Enum):
-    SINGLE = "single"
-    MULTIPART = "multi-part"
-
-
 class S3FileSyncPlan(BaseModel):
     """Pydantic Model for representing synchronizing a single file in S3."""
 
     src: S3File
     dest: S3Path
-    type: S3FileSyncType
 
 
 class S3Sync(BaseModel):
     """Pydantic Model for representing S3 synchronization."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     src: S3Path
     dest: S3Path
     src_client: S3Client
     dest_client: S3Client
-    chunk_size: int = 15_728_640
+    transfer_config: TransferConfig
+    max_files: conint(gt=0)  # type: ignore
 
     @cached_property
     def src_objects(self) -> List[S3File]:
@@ -143,7 +146,9 @@ class S3Sync(BaseModel):
             if key is not None:
                 path = S3Path(url=f"{self.src.scheme}://{self.src.bucket}/{key}")
                 size = self.src_client.head_object(Bucket=self.src.bucket, Key=key).get("ContentLength", 0)
-                ret.append(S3File(path=path, size=size))
+                file = S3File(path=path, size=size)
+                logger.debug(f"Found source object: {file}")
+                ret.append(file)
         return ret
 
     @cached_property
@@ -152,17 +157,37 @@ class S3Sync(BaseModel):
         for src_file in self.src_objects:
             trimmed_key = src_file.path.key.replace(self.src.key, "")
             dest_path = S3Path(url=f"{self.dest.url}{trimmed_key}")
-            if src_file.size < self.chunk_size:
-                sync_type = S3FileSyncType.SINGLE
-            else:
-                sync_type = S3FileSyncType.MULTIPART
-
-            ret.append(S3FileSyncPlan(src=src_file, dest=dest_path, type=sync_type))
+            logger.debug(f"Mapped {src_file.path.url} to destination {dest_path.url}")
+            ret.append(S3FileSyncPlan(src=src_file, dest=dest_path))
         return ret
 
-    def _single_file_sync(self, src: S3Path, dest: S3Path):
-        request = self.src_client.get_object(Bucket=src.bucket, Key=src.key)
+    def file_sync(self, src: S3File, dest: S3Path) -> None:
+        request = self.src_client.get_object(Bucket=src.path.bucket, Key=src.path.key)
         body = request.get("Body", None)
         if body is None:
-            raise RuntimeError(f"Error retrieving {src} from {self.src_client.meta.endpoint_url}")
-        self.dest_client.put_object(Bucket=dest.bucket, Key=dest.key)
+            raise RuntimeError(f"Error retrieving {src.path} from {self.src_client.meta.endpoint_url}")
+        logger.debug(f"Uploading from {src.path.key} in {src.path.bucket} to {dest.key} in {dest.bucket}")
+        self.dest_client.upload_fileobj(Fileobj=body, Bucket=dest.bucket, Key=dest.key, Config=self.transfer_config)
+
+    def execute(self) -> Iterator[str]:
+        errors = 0
+        yield f"Concurrent synchronization is limited to {self.max_files} file{'s' if self.max_files > 1 else ''} simultaneously"
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_files) as executor:
+            plan_futures = dict()
+            for plan in self.plans:
+                yield f"Synchronizing {plan.src.path.url} from {self.src_client.meta.endpoint_url} to {plan.dest.url} on {self.dest_client.meta.endpoint_url}"
+                future = executor.submit(self.file_sync, plan.src, plan.dest)
+                plan_futures[future] = plan
+
+            for future in concurrent.futures.as_completed(plan_futures):
+                plan = plan_futures[future]
+                try:
+                    future.result()
+                except Exception as exc:
+                    logger.error(f"Synchronizing {plan.src.path.url} generated an exception: {exc}")
+                    errors += 1
+                    raise exc
+                else:
+                    yield f"Transfer to {plan.dest.url} was completed."
+        if errors > 0:
+            raise RuntimeError(f"Encountered {errors} errors")

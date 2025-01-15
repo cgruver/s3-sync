@@ -63,6 +63,20 @@ def sync(
             parser=parse_url,
         ),
     ] = AnyHttpUrl(settings.dest.endpoint),
+    src_region: Annotated[
+        str,
+        typer.Option(
+            "--src-region",
+            help="The region to use for the S3 client for the source",
+        ),
+    ] = settings.src.region,
+    dest_region: Annotated[
+        str,
+        typer.Option(
+            "--dest-region",
+            help="The region to use for the S3 client for the destination",
+        ),
+    ] = settings.dest.region,
     src_validate: Annotated[
         bool,
         typer.Option(
@@ -143,9 +157,12 @@ def sync(
         dest=dest_path,
         src_endpoint=src_endpoint,
         dest_endpoint=dest_endpoint,
+        src_region=src_region,
+        dest_region=dest_region,
         src_validate=src_validate,
         dest_validate=dest_validate,
         max_threads_per_file=max_threads_per_file,
         max_files=max_files,
         chunk_size=chunk_size_int,
+        printer=print,
     )
