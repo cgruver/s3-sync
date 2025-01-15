@@ -35,5 +35,5 @@ build: format lint test
 	.venv/bin/tox -e build
 
 .PHONY: publish
-publish: .venv/bin/twine $(wildcard dist/*.whl)
+publish: .venv/bin/twine build
 	.venv/bin/twine upload dist/*
