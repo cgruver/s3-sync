@@ -7,7 +7,7 @@ from s3_sync.s3.model import S3Path
 @pytest.mark.parametrize(
     "url,expected_bucket,expected_key,expected_parent,expected_scheme,expected_is_dir",
     [
-        ("s3://my-bucket/", "my-bucket", None, None, "s3", True),
+        ("s3://my-bucket/", "my-bucket", "", None, "s3", True),
         ("s3://my.bucket.name/my-key", "my.bucket.name", "my-key", S3Path(url="s3://my.bucket.name/"), "s3", False),
         (
             "s3://123-bucket/another/key/path",
@@ -42,7 +42,7 @@ from s3_sync.s3.model import S3Path
             False,
         ),
         ("s3://my-bucket/with-key", "my-bucket", "with-key", S3Path(url="s3://my-bucket/"), "s3", False),
-        ("s3a://my-bucket/", "my-bucket", None, None, "s3a", True),
+        ("s3a://my-bucket/", "my-bucket", "", None, "s3a", True),
         ("s3a://my.bucket.name/my-key", "my.bucket.name", "my-key", S3Path(url="s3a://my.bucket.name/"), "s3a", False),
         (
             "s3a://123-bucket/another/key/path",
