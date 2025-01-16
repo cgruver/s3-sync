@@ -4,6 +4,7 @@ path = ""
 access_key = ""
 secret_key = ""
 region = ""
+default_directory = "models"
 validate_tls = true
 
 [dest]
@@ -12,6 +13,7 @@ path = ""
 access_key = ""
 secret_key = ""
 region = ""
+default_directory = "models"
 validate_tls = true
 
 [transfer_config]

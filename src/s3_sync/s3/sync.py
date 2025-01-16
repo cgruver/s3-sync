@@ -96,7 +96,7 @@ def sync(
         except ValidationError:
             possible_bucket = os.getenv("AWS_S3_BUCKET", None)
             if possible_bucket is not None:
-                src = S3Path(url=f"s3://{possible_bucket}/")
+                src = S3Path(url=f"s3://{possible_bucket}/{settings.src.default_directory}/")
                 logger.warning(
                     f"No source S3 path specified, but bucket was provided. Using inferred source: {src.url}"
                 )
@@ -108,7 +108,7 @@ def sync(
         except ValidationError:
             possible_bucket = os.getenv("AWS_S3_BUCKET", None)
             if possible_bucket is not None:
-                dest = S3Path(url=f"s3://{possible_bucket}/")
+                dest = S3Path(url=f"s3://{possible_bucket}/{settings.dest.default_directory}/")
                 logger.warning(
                     f"No destination S3 path specified, but bucket was provided. Using inferred destination: {dest.url}"
                 )
