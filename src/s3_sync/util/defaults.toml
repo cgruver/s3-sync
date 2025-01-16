@@ -1,13 +1,20 @@
 [src]
 endpoint = "https://s3.amazonaws.com"
+path = "s3://bucket/folder/"
 access_key = ""
 secret_key = ""
-region = "us-east-1"
+region = ""
 validate_tls = true
 
 [dest]
 endpoint = "https://s3.amazonaws.com"
+path = "s3://bucket/folder/"
 access_key = ""
 secret_key = ""
-region = "us-east-1"
+region = ""
 validate_tls = true
+
+[transfer_config]
+chunk_size = "15MiB"
+max_threads_per_file = 5
+max_files = 1
