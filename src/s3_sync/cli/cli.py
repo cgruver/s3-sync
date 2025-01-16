@@ -32,6 +32,7 @@ def parse_url(value: str) -> AnyHttpUrl:
 cli = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
     pretty_exceptions_show_locals=False,
+    add_completion=False,
 )
 
 
@@ -42,7 +43,12 @@ def sync(
     verbose: Annotated[
         int,
         typer.Option(
-            "--verbose", "-v", count=True, help="Increase logging verbosity (repeat for more)", show_default=False
+            "--verbose",
+            "-v",
+            count=True,
+            help="Increase logging verbosity (repeat for more)",
+            show_default=False,
+            metavar="",
         ),
     ] = 0,
     src_endpoint: Annotated[
@@ -52,6 +58,7 @@ def sync(
             "-s",
             help="The endpoint to use for the source bucket",
             parser=parse_url,
+            metavar="URL",
         ),
     ] = AnyHttpUrl(settings.src.endpoint),
     dest_endpoint: Annotated[
@@ -61,6 +68,7 @@ def sync(
             "-d",
             help="The endpoint to use for the destination bucket",
             parser=parse_url,
+            metavar="URL",
         ),
     ] = AnyHttpUrl(settings.dest.endpoint),
     src_region: Annotated[
