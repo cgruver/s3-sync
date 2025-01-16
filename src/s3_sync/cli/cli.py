@@ -96,7 +96,7 @@ def sync(
     dest_validate: Annotated[
         bool,
         typer.Option(
-            "--src-validate",
+            "--dest-validate",
             help="Whether to validate the TLS certificates of the destination endpoint, if applicable",
         ),
     ] = settings.dest.validate_tls,
