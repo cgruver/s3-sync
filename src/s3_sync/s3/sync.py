@@ -15,10 +15,10 @@ from .model import S3Sync
 
 
 def sync(
-    src: S3Path = S3Path(url=settings.src.path),
-    dest: S3Path = S3Path(url=settings.dest.path),
-    src_endpoint: Optional[AnyHttpUrl] = AnyHttpUrl(settings.src.endpoint),
-    dest_endpoint: Optional[AnyHttpUrl] = AnyHttpUrl(settings.dest.endpoint),
+    src: Optional[S3Path] = None,
+    dest: Optional[S3Path] = None,
+    src_endpoint: Optional[AnyHttpUrl] = None,
+    dest_endpoint: Optional[AnyHttpUrl] = None,
     src_region: Optional[str] = settings.src.region,
     dest_region: Optional[str] = settings.dest.region,
     src_validate: bool = settings.src.validate_tls,
@@ -90,8 +90,10 @@ def sync(
         preferred_transfer_client="classic",
     )
 
-    if src is None or src.url == "" or dest is None or dest.url == "":
-        raise RuntimeError("You must specify both a source and a destination for the sync")
+    if src is None:
+        src = S3Path(url=settings.src.path)
+    if dest is None:
+        dest = S3Path(url=settings.dest.path)
 
     sync = S3Sync(
         src=src,

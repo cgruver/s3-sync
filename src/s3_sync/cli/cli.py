@@ -1,6 +1,7 @@
+from typing import Optional
+
 import typer
 from pydantic import AnyHttpUrl
-from pydantic import ByteSize
 from pydantic import ValidationError
 from rich import print
 from typing_extensions import Annotated
@@ -38,8 +39,8 @@ cli = typer.Typer(
 
 @cli.command(no_args_is_help=True)
 def sync(
-    src: Annotated[str, typer.Argument(help="The source bucket and folder to sync from")] = settings.src.path,
-    dest: Annotated[str, typer.Argument(help="The destination bucket and folder to sync to")] = settings.dest.path,
+    src: Annotated[str, typer.Argument(help="The source bucket and folder to sync from")] = "",
+    dest: Annotated[str, typer.Argument(help="The destination bucket and folder to sync to")] = "",
     verbose: Annotated[
         int,
         typer.Option(
@@ -52,7 +53,7 @@ def sync(
         ),
     ] = 0,
     src_endpoint: Annotated[
-        AnyHttpUrl,
+        Optional[AnyHttpUrl],
         typer.Option(
             "--src-endpoint",
             "-s",
@@ -60,9 +61,9 @@ def sync(
             parser=parse_url,
             metavar="URL",
         ),
-    ] = AnyHttpUrl(settings.src.endpoint),
+    ] = None,
     dest_endpoint: Annotated[
-        AnyHttpUrl,
+        Optional[AnyHttpUrl],
         typer.Option(
             "--dest-endpoint",
             "-d",
@@ -70,7 +71,7 @@ def sync(
             parser=parse_url,
             metavar="URL",
         ),
-    ] = AnyHttpUrl(settings.dest.endpoint),
+    ] = None,
     src_region: Annotated[
         str,
         typer.Option(
@@ -137,26 +138,25 @@ def sync(
 
     logger = make_logger(verbose)
     logger.debug(f"{src} -> {dest}")
+
+    src_and_dest = dict()
     try:
         src_path = S3Path(url=src)
+        src_and_dest["src"] = src_path
     except ValidationError:
-        print(
+        logger.error(
             f"Source path ('{src}') does not look like a valid S3 URL (s3://\[endpoint/]\[bucket/]\[path/]object)"  # noqa: W605
         )
-        raise typer.Exit(1)
 
     try:
         dest_path = S3Path(url=dest)
+        src_and_dest["dest"] = dest_path
     except ValidationError:
-        print(
+        logger.error(
             f"Destination path ('{dest}') does not look like a valid S3 URL (s3://\[endpoint/]\[bucket/]\[path/]object)"  # noqa: W605
         )
-        raise typer.Exit(1)
 
-    logger.debug(f"{src_endpoint}{src_path.bucket}/{src_path.key} -> {dest_endpoint}{dest_path.bucket}/{dest_path.key}")
     s3_sync(
-        src=src_path,
-        dest=dest_path,
         src_endpoint=src_endpoint,
         dest_endpoint=dest_endpoint,
         src_region=src_region,
@@ -167,4 +167,5 @@ def sync(
         max_files=max_files,
         chunk_size=chunk_size,
         printer=print,
+        **src_and_dest,
     )
