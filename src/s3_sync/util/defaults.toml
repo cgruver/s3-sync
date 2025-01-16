@@ -1,14 +1,14 @@
 [src]
-endpoint = "https://s3.amazonaws.com"
-path = "s3://bucket/folder/"
+endpoint = ""
+path = ""
 access_key = ""
 secret_key = ""
 region = ""
 validate_tls = true
 
 [dest]
-endpoint = "https://s3.amazonaws.com"
-path = "s3://bucket/folder/"
+endpoint = ""
+path = ""
 access_key = ""
 secret_key = ""
 region = ""
