@@ -141,6 +141,7 @@ class S3Sync(BaseModel):
     @cached_property
     def src_objects(self) -> List[S3File]:
         ret = []
+        logger.debug("Listing source objects")
         for entry in self.src_client.list_objects(Bucket=self.src.bucket, Prefix=self.src.key).get("Contents", []):
             key = entry.get("Key", None)
             if key is not None:
