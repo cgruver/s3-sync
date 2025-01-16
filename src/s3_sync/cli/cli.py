@@ -89,14 +89,14 @@ def sync(
     src_validate: Annotated[
         bool,
         typer.Option(
-            "--src-validate",
+            "--src-validate/--no-src-validate",
             help="Whether to validate the TLS certificates of the source endpoint, if applicable",
         ),
     ] = settings.src.validate_tls,
     dest_validate: Annotated[
         bool,
         typer.Option(
-            "--dest-validate",
+            "--dest-validate/--no-dest-validate",
             help="Whether to validate the TLS certificates of the destination endpoint, if applicable",
         ),
     ] = settings.dest.validate_tls,
