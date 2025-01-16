@@ -123,6 +123,6 @@ def sync(
         transfer_config=transfer_config,
         max_files=max_files,
     )
-    logger.debug(f"Synchronization plan: {sync.plans}")
+    logger.info(f"Synchronization plan: {sync.plans}")
     for line in sync.execute():
         printer(line)
