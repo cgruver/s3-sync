@@ -67,12 +67,12 @@ def sync(
     if dest_region is None or dest_region == "":
         dest_region = os.getenv("AWS_DEFAULT_REGION", None)
 
-    dest_access_key = settings.src.access_key
+    dest_access_key = settings.dest.access_key
     if dest_access_key is None or dest_access_key == "":
         dest_access_key = os.getenv("AWS_ACCESS_KEY_ID", None)
     logger.debug(f"Constructing dest client using Access Key ID: {dest_access_key}")
 
-    dest_secret_key = settings.src.secret_key
+    dest_secret_key = settings.dest.secret_key
     if dest_secret_key is None or dest_secret_key == "":
         dest_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY", None)
 
