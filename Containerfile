@@ -1,4 +1,17 @@
-FROM registry.access.redhat.com/ubi9/ubi:latest
+FROM registry.access.redhat.com/ubi9/ubi:latest as base
+
+FROM base as build
+
+RUN dnf -y install python3.11-pip make git && \
+    python3.11 -m pip install tox setuptools wheel build
+
+COPY . /app
+
+WORKDIR /app
+
+RUN make build
+
+FROM base
 
 LABEL \
     io.openshift.tags="s3-sync" \
@@ -13,13 +26,13 @@ LABEL \
     maintainer="James Harmison <jharmison@redhat.com>" \
     url="https://github.com/jharmison-redhat/s3-sync"
 
+COPY --from=build /app/dist/*.whl /app/
+
 RUN dnf -y install python3.11-pip && \
     dnf -y clean all && \
-    python3.11 -m pip install --no-cache-dir diskless-s3-sync
+    python3.11 -m pip install --no-cache-dir /app/*.whl
 
 USER 1001
-
-VOLUME ["/etc/s3-sync/config.toml"]
 
 ENTRYPOINT ["/usr/local/bin/s3-sync"]
 CMD []
