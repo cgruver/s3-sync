@@ -144,16 +144,16 @@ def sync(
         src_path = S3Path(url=src)
         src_and_dest["src"] = src_path
     except ValidationError:
-        logger.error(
-            f"Source path ('{src}') does not look like a valid S3 URL (s3://\[endpoint/]\[bucket/]\[path/]object)"  # noqa: W605
+        logger.debug(
+            f"Source path provided on CLI ('{src}') does not look like a valid S3 URL"
         )
 
     try:
         dest_path = S3Path(url=dest)
         src_and_dest["dest"] = dest_path
     except ValidationError:
-        logger.error(
-            f"Destination path ('{dest}') does not look like a valid S3 URL (s3://\[endpoint/]\[bucket/]\[path/]object)"  # noqa: W605
+        logger.debug(
+            f"Destination path provided on CLI ('{dest}') does not look like a valid S3 URL"
         )
 
     s3_sync(
