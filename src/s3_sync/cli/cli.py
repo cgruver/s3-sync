@@ -139,29 +139,31 @@ def sync(
     logger = make_logger(verbose)
     logger.debug(f"{src} -> {dest}")
 
-    src_and_dest = dict()
+    sync_args = {
+        "src_endpoint": src_endpoint,
+        "dest_endpoint": dest_endpoint,
+        "src_region": src_region,
+        "dest_region": dest_region,
+        "src_validate": src_validate,
+        "dest_validate": dest_validate,
+        "max_threads_per_file": max_threads_per_file,
+        "max_files": max_files,
+        "chunk_size": chunk_size,
+        "printer": print,
+    }
     try:
         src_path = S3Path(url=src)
-        src_and_dest["src"] = src_path
+        sync_args["src"] = src_path
     except ValidationError:
         logger.debug(f"Source path provided on CLI ('{src}') does not look like a valid S3 URL")
 
     try:
         dest_path = S3Path(url=dest)
-        src_and_dest["dest"] = dest_path
+        sync_args["dest"] = dest_path
     except ValidationError:
         logger.debug(f"Destination path provided on CLI ('{dest}') does not look like a valid S3 URL")
 
+    logger.debug(f"Running sync with args: {sync_args}")
     s3_sync(
-        src_endpoint=src_endpoint,
-        dest_endpoint=dest_endpoint,
-        src_region=src_region,
-        dest_region=dest_region,
-        src_validate=src_validate,
-        dest_validate=dest_validate,
-        max_threads_per_file=max_threads_per_file,
-        max_files=max_files,
-        chunk_size=chunk_size,
-        printer=print,
-        **src_and_dest,
+        **sync_args,
     )
