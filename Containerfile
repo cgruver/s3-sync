@@ -10,7 +10,8 @@ LABEL \
     bucket to another, optionally on different endpoints, with configuration via environment variables, command line \
     arguments, and configuration files that can be mounted into the container." \
     summary="Provides the latest release of the s3-sync python package" \
-    maintainer="James Harmison <jharmison@redhat.com>"
+    maintainer="James Harmison <jharmison@redhat.com>" \
+    url="https://github.com/jharmison-redhat/s3-sync"
 
 RUN dnf -y install python3.11-pip && \
     dnf -y clean all && \
