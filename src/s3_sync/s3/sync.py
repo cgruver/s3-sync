@@ -91,9 +91,29 @@ def sync(
     )
 
     if src is None:
-        src = S3Path(url=settings.src.path)
+        try:
+            src = S3Path(url=settings.src.path)
+        except ValidationError:
+            possible_bucket = os.getenv("AWS_S3_BUCKET", None)
+            if possible_bucket is not None:
+                src = S3Path(url=f"s3://{possible_bucket}/")
+                logger.warning(
+                    f"No source S3 path specified, but bucket was provided. Using inferred source: {src.url}"
+                )
+            else:
+                raise RuntimeError("Unable to infer source bucket location")
     if dest is None:
-        dest = S3Path(url=settings.dest.path)
+        try:
+            dest = S3Path(url=settings.dest.path)
+        except ValidationError:
+            possible_bucket = os.getenv("AWS_S3_BUCKET", None)
+            if possible_bucket is not None:
+                dest = S3Path(url=f"s3://{possible_bucket}/")
+                logger.warning(
+                    f"No destination S3 path specified, but bucket was provided. Using inferred destination: {dest.url}"
+                )
+            else:
+                raise RuntimeError("Unable to infer destination bucket location")
 
     sync = S3Sync(
         src=src,
