@@ -34,9 +34,13 @@ def sync(
         raise RuntimeError(f"Invalid chunk size: {chunk_size}. Please specify in bytes, KB, MiB, or similar.")
 
     if src_endpoint is None or src_endpoint == "":
-        src_endpoint = (
-            AnyHttpUrl(os.getenv("AWS_S3_ENDPOINT", "")) if os.getenv("AWS_S3_ENDPOINT") is not None else None
-        )
+        possible_src_endpoint = settings.src.endpoint
+        if possible_src_endpoint is not None and possible_src_endpoint != "":
+            src_endpoint = AnyHttpUrl(possible_src_endpoint)
+        else:
+            src_endpoint = (
+                AnyHttpUrl(os.getenv("AWS_S3_ENDPOINT", "")) if os.getenv("AWS_S3_ENDPOINT") is not None else None
+            )
 
     if src_region is None or src_region == "":
         src_region = os.getenv("AWS_S3_DEFAULT_REGION", None)
@@ -60,9 +64,13 @@ def sync(
     )
 
     if dest_endpoint is None or dest_endpoint == "":
-        dest_endpoint = (
-            AnyHttpUrl(os.getenv("AWS_S3_ENDPOINT", "")) if os.getenv("AWS_S3_ENDPOINT") is not None else None
-        )
+        possible_dest_endpoint = settings.dest.endpoint
+        if possible_dest_endpoint is not None and possible_dest_endpoint != "":
+            dest_endpoint = AnyHttpUrl(possible_dest_endpoint)
+        else:
+            dest_endpoint = (
+                AnyHttpUrl(os.getenv("AWS_S3_ENDPOINT", "")) if os.getenv("AWS_S3_ENDPOINT") is not None else None
+            )
 
     if dest_region is None or dest_region == "":
         dest_region = os.getenv("AWS_DEFAULT_REGION", None)
