@@ -170,9 +170,13 @@ class S3Sync(BaseModel):
             if error_code is None:
                 logger.error(f"Some issue encountered with checking {dest} at {self.dest_client.meta.endpoint_url}")
             elif error_code == "404":
-                logger.debug(f"Destination file {dest} at {self.dest_client.meta.endpoint_url} appears to not exist yet")
+                logger.debug(
+                    f"Destination file {dest} at {self.dest_client.meta.endpoint_url} appears to not exist yet"
+                )
             else:
-                logger.warning(f"Some issue getting information on {dest} at {self.dest_client.meta.endpoint_url}: {getattr(e, 'response')}")
+                logger.warning(
+                    f"Some issue getting information on {dest} at {self.dest_client.meta.endpoint_url}: {getattr(e, 'response')}"
+                )
             dest_head = None
             pass
         if dest_head is not None:
@@ -182,10 +186,14 @@ class S3Sync(BaseModel):
             dest_md5 = dest_head.get("ETag", "").strip('"')
             dest_size = int(dest_head.get("ContentLength", 0))
             if src_md5 == dest_md5 and src_size == dest_size:
-                logger.debug(f"Skipping synchronization to {dest} at {self.dest_client.meta.endpoint_url} as it appears to be updated.")
+                logger.debug(
+                    f"Skipping synchronization to {dest} at {self.dest_client.meta.endpoint_url} as it appears to be updated."
+                )
                 return None
             else:
-                logger.debug(f"{dest} at {self.dest_client.meta.endpoint_url} does not appear to match {src.path} at {self.src_client.meta.endpoint_url}")
+                logger.debug(
+                    f"{dest} at {self.dest_client.meta.endpoint_url} does not appear to match {src.path} at {self.src_client.meta.endpoint_url}"
+                )
         request = self.src_client.get_object(Bucket=src.path.bucket, Key=src.path.key)
         body = request.get("Body", None)
         if body is None:
