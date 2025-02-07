@@ -2,7 +2,7 @@
 all: dev
 
 .venv/bin/pip:
-	python3.11 -m venv .venv
+	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip
 
 .venv/bin/twine: .venv/bin/pip
