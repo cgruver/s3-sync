@@ -163,6 +163,29 @@ class S3Sync(BaseModel):
         return ret
 
     def file_sync(self, src: S3File, dest: S3Path) -> None:
+        try:
+            dest_head = self.dest_client.head_object(Bucket=dest.bucket, Key=dest.key)
+        except Exception as e:
+            error_code = getattr(e, "response", {}).get("Error", {}).get("Code")
+            if error_code is None:
+                logger.error(f"Some issue encountered with checking {dest} at {self.dest_client.meta.endpoint_url}")
+            elif error_code == "404":
+                logger.debug(f"Destination file {dest} at {self.dest_client.meta.endpoint_url} appears to not exist yet")
+            else:
+                logger.warning(f"Some issue getting information on {dest} at {self.dest_client.meta.endpoint_url}: {getattr(e, 'response')}")
+            dest_head = None
+            pass
+        if dest_head is not None:
+            src_head = self.src_client.head_object(Bucket=src.path.bucket, Key=src.path.key)
+            src_md5 = src_head.get("ETag", "").strip('"')
+            src_size = int(src_head.get("ContentLength", 0))
+            dest_md5 = dest_head.get("ETag", "").strip('"')
+            dest_size = int(dest_head.get("ContentLength", 0))
+            if src_md5 == dest_md5 and src_size == dest_size:
+                logger.debug(f"Skipping synchronization to {dest} at {self.dest_client.meta.endpoint_url} as it appears to be updated.")
+                return None
+            else:
+                logger.debug(f"{dest} at {self.dest_client.meta.endpoint_url} does not appear to match {src.path} at {self.src_client.meta.endpoint_url}")
         request = self.src_client.get_object(Bucket=src.path.bucket, Key=src.path.key)
         body = request.get("Body", None)
         if body is None:
