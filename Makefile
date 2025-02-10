@@ -17,7 +17,7 @@ all: dev
 	.venv/bin/pip install setuptools wheel build
 
 .PHONY: dev
-dev: .venv/lib/python3.11/site-packages/build/__main__.py
+dev: .venv/lib/$(PYTHON)/site-packages/build/__main__.py
 	.venv/bin/pip install -e .[dev]
 
 .PHONY: lint
