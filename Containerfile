@@ -9,7 +9,8 @@ COPY . /app
 
 WORKDIR /app
 
-RUN make build
+RUN git clean -dxf && \
+    make build PYTHON=python3.11
 
 FROM base
 

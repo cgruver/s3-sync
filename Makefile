@@ -1,8 +1,10 @@
+PYTHON := python3.13
+
 .PHONY: all
 all: dev
 
 .venv/bin/pip:
-	python3 -m venv .venv
+	$(PYTHON) -m venv .venv
 	.venv/bin/pip install --upgrade pip
 
 .venv/bin/twine: .venv/bin/pip
@@ -11,7 +13,7 @@ all: dev
 .venv/bin/tox: .venv/bin/pip
 	.venv/bin/pip install tox
 
-.venv/lib/python3.11/site-packages/build/__main__.py: .venv/bin/pip
+.venv/lib/$(PYTHON)/site-packages/build/__main__.py: .venv/bin/pip
 	.venv/bin/pip install setuptools wheel build
 
 .PHONY: dev
