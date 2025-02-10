@@ -27,6 +27,7 @@ def sync(
     max_files: int = settings.transfer_config.max_threads_per_file,
     chunk_size: str = settings.transfer_config.chunk_size,
     printer: Callable = print,
+    force: bool = False,
 ) -> None:
     try:
         chunk_size_int = ByteSize._validate(chunk_size, None)  # type: ignore
@@ -132,6 +133,7 @@ def sync(
         dest_client=dest_client,
         transfer_config=transfer_config,
         max_files=max_files,
+        force=force,
     )
     logger.info(f"Synchronization plan: {sync.plans}")
     for line in sync.execute():

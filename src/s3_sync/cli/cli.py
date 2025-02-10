@@ -116,6 +116,14 @@ def sync(
         str,
         typer.Option(help="The size of each chunk", metavar="BYTESIZE"),
     ] = settings.transfer_config.chunk_size,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            "-f",
+            help="Whether to force the sync even if the file checksums and size match",
+        ),
+    ] = settings.transfer_config.force,
     _: Annotated[
         bool,
         typer.Option(
@@ -150,6 +158,7 @@ def sync(
         "max_files": max_files,
         "chunk_size": chunk_size,
         "printer": print,
+        "force": force,
     }
     try:
         src_path = S3Path(url=src)
